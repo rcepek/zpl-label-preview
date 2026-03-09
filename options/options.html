@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZPL Label Preview — Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ZPL Label Preview</h1>
+      <p class="subtitle">Settings</p>
+    </header>
+
+    <!-- Local Server -->
+    <section class="card">
+      <h2>Log File Server</h2>
+      <p class="hint">Run the command below in Terminal once to serve the log folder. It starts a lightweight read-only HTTP server — no data leaves your machine.</p>
+
+      <div class="server-tabs">
+        <button class="tab-btn active" data-tab="mac">Mac</button>
+        <button class="tab-btn" data-tab="windows">Windows</button>
+      </div>
+
+      <div id="tab-mac" class="tab-content">
+        <code id="cmd-mac" class="cmd-block">python3 -m http.server 8765 --directory ~/Library/Logs/PlexComponentHost</code>
+        <button class="btn-copy" data-target="cmd-mac">Copy</button>
+      </div>
+      <div id="tab-windows" class="tab-content hidden">
+        <code id="cmd-windows" class="cmd-block">python -m http.server 8765 --directory "%LOCALAPPDATA%\PlexComponentHost\logs"</code>
+        <button class="btn-copy" data-target="cmd-windows">Copy</button>
+        <p class="hint" style="margin-top:8px;">Adjust the path to match where PlexComponentHost stores logs on your machine.</p>
+      </div>
+
+      <div class="form-row" style="margin-top:16px;">
+        <label>
+          Port
+          <input type="number" id="server-port" min="1024" max="65535" value="8765" style="width:100px;" />
+        </label>
+        <button id="btn-test-server" class="btn-secondary" style="margin-bottom:0;">Test Connection</button>
+        <span id="test-status" class="test-status"></span>
+      </div>
+
+      <button id="btn-reset-offset" class="btn-link" style="margin-top:10px;">Re-process today's file from start</button>
+    </section>
+
+    <!-- Label Size -->
+    <section class="card">
+      <h2>Label Size</h2>
+      <p class="hint">Enter the label dimensions in inches (must match your physical label stock).</p>
+      <div class="form-row">
+        <label>
+          Width (in)
+          <input type="number" id="label-width" min="0.5" max="20" step="0.25" value="4" />
+        </label>
+        <span class="sep">×</span>
+        <label>
+          Height (in)
+          <input type="number" id="label-height" min="0.5" max="20" step="0.25" value="6" />
+        </label>
+      </div>
+    </section>
+
+    <!-- DPI -->
+    <section class="card">
+      <h2>Printer DPI</h2>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="dpmm" value="8" />
+          <span>8 dpmm <em>(203 DPI — standard)</em></span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="dpmm" value="12" />
+          <span>12 dpmm <em>(300 DPI — high quality)</em></span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="dpmm" value="24" />
+          <span>24 dpmm <em>(600 DPI — ultra high)</em></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Output Format -->
+    <section class="card">
+      <h2>Output Format</h2>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="format" value="png" />
+          <span>PNG <em>(lossless, best for printing)</em></span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="format" value="jpg" />
+          <span>JPG <em>(smaller file size)</em></span>
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="format" value="pdf" />
+          <span>PDF <em>(download only, no preview)</em></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Download Folder -->
+    <section class="card">
+      <h2>Download Folder</h2>
+      <p class="hint">Subfolder within your browser's default Downloads directory where rendered labels will be saved. Leave blank to save directly to Downloads.</p>
+      <div class="form-row">
+        <label style="flex:1;">
+          Subfolder name
+          <input type="text" id="download-subfolder" placeholder="ZPL Labels" style="width:100%;" />
+        </label>
+      </div>
+      <p class="hint" style="margin-top:8px;">Example: <code>ZPL Labels</code> → saves to <code>~/Downloads/ZPL Labels/label-xxx.png</code></p>
+    </section>
+
+    <!-- Polling Interval -->
+    <section class="card">
+      <h2>Polling Interval</h2>
+      <p class="hint">How often to check the log file for new print jobs. Note: Chrome enforces a minimum of 30 seconds for background polling. The popup checks immediately when opened.</p>
+      <select id="poll-interval">
+        <option value="1">Every 1 second</option>
+        <option value="2" selected>Every 2 seconds</option>
+        <option value="5">Every 5 seconds</option>
+        <option value="10">Every 10 seconds</option>
+      </select>
+    </section>
+
+    <!-- Toggles -->
+    <section class="card">
+      <h2>Options</h2>
+      <label class="toggle-label">
+        <input type="checkbox" id="auto-download" />
+        <span>Auto-download labels when detected</span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="debug-mode" />
+        <span>Debug mode <em>(shows raw log + detected ZPL in popup)</em></span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="carousel-view" />
+        <span>Show label history as carousel <em>(instead of prev/next)</em></span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="sound-enabled" />
+        <span>Play chime when a new label is detected</span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="os-notifications-enabled" />
+        <span>Show OS notification when a new label is detected</span>
+      </label>
+    </section>
+
+    <!-- Preview Pop-up -->
+    <section class="card">
+      <h2>Preview Pop-up</h2>
+      <p class="hint">Automatically show a floating preview window when a new print job is detected. The window closes itself after the configured time.</p>
+      <label class="toggle-label">
+        <input type="checkbox" id="popup-preview-enabled" />
+        <span>Show preview pop-up on new label</span>
+      </label>
+      <div class="form-row" style="margin-top:12px;">
+        <label>
+          Auto-close after (seconds)
+          <input type="number" id="popup-preview-duration" min="2" max="60" step="1" value="5" style="width:80px;" />
+        </label>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="btn-save" class="btn-primary">Save Settings</button>
+      <span id="save-status" class="save-status"></span>
+    </div>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

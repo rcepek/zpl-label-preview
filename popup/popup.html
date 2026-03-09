@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZPL Label Preview</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- Onboarding state -->
+  <div id="state-onboarding" class="state hidden">
+    <div class="onboarding">
+      <div class="icon-wrap">🏷️</div>
+      <h2>ZPL Label Preview</h2>
+      <p>Open Settings to get the Terminal command to start the local log server.</p>
+      <button id="btn-open-settings" class="btn-primary">Open Settings</button>
+    </div>
+  </div>
+
+  <!-- Watching state -->
+  <div id="state-watching" class="state hidden">
+    <div class="watching">
+      <div class="spinner"></div>
+      <p>Watching for print jobs…</p>
+      <span id="watch-filename" class="watch-filename"></span>
+    </div>
+  </div>
+
+  <!-- Label display state -->
+  <div id="state-label" class="state hidden">
+    <div class="label-header">
+      <span id="label-info" class="label-info"></span>
+      <div class="header-btns">
+        <button id="btn-copy-zpl" class="icon-btn" title="Copy ZPL to clipboard">📋</button>
+        <a id="btn-settings" href="#" class="settings-link" title="Settings">⚙</a>
+      </div>
+    </div>
+
+    <!-- Image preview (PNG/JPG) -->
+    <div id="label-image-wrap" class="label-image-wrap">
+      <img id="label-img" src="" alt="Label preview" />
+    </div>
+
+    <!-- Rotate controls (shown for non-PDF labels) -->
+    <div id="rotate-controls" class="rotate-controls hidden">
+      <button id="btn-rotate" class="rotate-btn" title="Rotate 90° clockwise (R)">↻</button>
+      <span id="rotate-deg" class="rotate-deg">0°</span>
+      <label class="persist-label" title="Keep this rotation when switching labels">
+        <input type="checkbox" id="chk-persist-rotation" />
+        <span>Persist</span>
+      </label>
+      <span class="zoom-hint" id="zoom-hint"></span>
+    </div>
+
+    <!-- PDF placeholder -->
+    <div id="pdf-placeholder" class="pdf-placeholder hidden">
+      <div class="pdf-icon">📄</div>
+      <p>PDF — download to view</p>
+    </div>
+
+    <!-- Carousel (shown when carouselView is on and labels > 1) -->
+    <div id="label-carousel" class="label-carousel hidden"></div>
+
+    <!-- Pagination (shown when carouselView is off and labels > 1) -->
+    <div id="pagination" class="pagination hidden">
+      <button id="btn-prev" class="page-btn" title="Previous label (←)">‹</button>
+      <span id="page-counter" class="page-counter"></span>
+      <button id="btn-next" class="page-btn" title="Next label (→)">›</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button id="btn-download" class="btn-primary">Download</button>
+      <button id="btn-open-full" class="btn-secondary">Open full size</button>
+    </div>
+
+    <!-- Utility bar -->
+    <div class="util-bar">
+      <span class="kbd-hint">← → navigate · R rotate · scroll zoom · Z reset</span>
+      <button id="btn-clear-history" class="btn-danger-link">Clear history</button>
+    </div>
+
+    <!-- Debug section -->
+    <details id="debug-section" class="debug-section hidden">
+      <summary>Debug info</summary>
+      <div class="debug-content">
+        <h4>Raw log tail (last 2000 chars)</h4>
+        <pre id="debug-raw"></pre>
+        <h4>Detected ZPL blocks</h4>
+        <pre id="debug-zpl"></pre>
+      </div>
+    </details>
+  </div>
+
+  <!-- Error state -->
+  <div id="state-error" class="state hidden">
+    <div class="error-box">
+      <p id="error-msg"></p>
+      <button id="btn-open-settings-error" class="btn-link">Open Settings</button>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
