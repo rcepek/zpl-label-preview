@@ -1,8 +1,18 @@
-import { saveSettings, getSettings, saveDirHandle, getDirHandle, clearDirHandle } from '../lib/storage.js';
+import { saveSettings, getSettings, todayLogFilename, saveDirHandle, getDirHandle, clearDirHandle } from '../lib/storage.js';
 
+// Method A — folder picker
 const elBtnSelectFolder = document.getElementById('btn-select-folder');
 const elBtnClearFolder = document.getElementById('btn-clear-folder');
 const elSelectedFolder = document.getElementById('selected-folder');
+
+// Method B — HTTP server
+const elServerPort = document.getElementById('server-port');
+const elLogDirMac = document.getElementById('log-dir-mac');
+const elLogDirWindows = document.getElementById('log-dir-windows');
+const elBtnTestServer = document.getElementById('btn-test-server');
+const elTestStatus = document.getElementById('test-status');
+
+// Shared
 const elBtnResetOffset = document.getElementById('btn-reset-offset');
 const elWidth = document.getElementById('label-width');
 const elHeight = document.getElementById('label-height');
@@ -21,6 +31,9 @@ const elSaveStatus = document.getElementById('save-status');
 async function init() {
   const settings = await getSettings();
 
+  elServerPort.value = settings.serverPort;
+  elLogDirMac.value = settings.logDirMac || '~/Library/Logs/PlexComponentHost';
+  elLogDirWindows.value = settings.logDirWindows || '%LOCALAPPDATA%\\Plex\\ComponentHost\\logs';
   elWidth.value = settings.width;
   elHeight.value = settings.height;
   document.querySelector(`input[name="dpmm"][value="${settings.dpmm}"]`).checked = true;
@@ -35,10 +48,13 @@ async function init() {
   elSoundEnabled.checked = settings.soundEnabled;
   elOsNotificationsEnabled.checked = settings.osNotificationsEnabled;
 
-  // Show the currently stored folder (if any)
+  updateCmdBlocks(settings.serverPort);
+
   const dirHandle = await getDirHandle();
   await updateFolderDisplay(dirHandle);
 }
+
+// ── Method A helpers ──────────────────────────────────────────────────────────
 
 async function updateFolderDisplay(dirHandle) {
   if (!dirHandle) {
@@ -46,15 +62,12 @@ async function updateFolderDisplay(dirHandle) {
     elSelectedFolder.className = 'selected-folder';
     return;
   }
-
-  // Check current permission state
   let permission;
   try {
     permission = await dirHandle.queryPermission({ mode: 'read' });
   } catch {
     permission = 'unknown';
   }
-
   if (permission === 'granted') {
     elSelectedFolder.textContent = `Selected: ${dirHandle.name}`;
     elSelectedFolder.className = 'selected-folder ok';
@@ -64,13 +77,11 @@ async function updateFolderDisplay(dirHandle) {
   }
 }
 
-// Folder picker
 elBtnSelectFolder.addEventListener('click', async () => {
   try {
     const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
     await saveDirHandle(dirHandle);
     await updateFolderDisplay(dirHandle);
-    // Clear any stale poll error and trigger an immediate poll
     chrome.storage.session.set({ pollError: null });
     chrome.runtime.sendMessage({ type: 'POLL_NOW' });
   } catch (err) {
@@ -86,6 +97,65 @@ elBtnClearFolder.addEventListener('click', async () => {
   updateFolderDisplay(null);
 });
 
+// ── Method B helpers ──────────────────────────────────────────────────────────
+
+function updateCmdBlocks(port) {
+  const mac = elLogDirMac.value.trim() || '~/Library/Logs/PlexComponentHost';
+  const win = elLogDirWindows.value.trim() || '%LOCALAPPDATA%\\Plex\\ComponentHost\\logs';
+  document.getElementById('cmd-mac').textContent =
+    `python3 -m http.server ${port} --directory ${mac}`;
+  document.getElementById('cmd-windows').textContent =
+    `python -m http.server ${port} --directory "${win}"`;
+}
+
+elServerPort.addEventListener('input', () => updateCmdBlocks(elServerPort.value || 8765));
+elLogDirMac.addEventListener('input', () => updateCmdBlocks(elServerPort.value || 8765));
+elLogDirWindows.addEventListener('input', () => updateCmdBlocks(elServerPort.value || 8765));
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach((c) => c.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.remove('hidden');
+  });
+});
+
+// Copy buttons
+document.querySelectorAll('.btn-copy').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const text = document.getElementById(btn.dataset.target).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+    });
+  });
+});
+
+// Test connection
+elBtnTestServer.addEventListener('click', async () => {
+  const port = parseInt(elServerPort.value, 10) || 8765;
+  const filename = todayLogFilename();
+  elTestStatus.textContent = 'Testing…';
+  elTestStatus.className = 'test-status';
+  try {
+    const res = await fetch(`http://localhost:${port}/${filename}`, { cache: 'no-store' });
+    if (res.ok) {
+      elTestStatus.textContent = `Connected — ${filename} found`;
+      elTestStatus.className = 'test-status ok';
+    } else {
+      elTestStatus.textContent = `Server reachable but ${filename} not found (${res.status})`;
+      elTestStatus.className = 'test-status error';
+    }
+  } catch {
+    elTestStatus.textContent = `Cannot reach localhost:${port} — is the server running?`;
+    elTestStatus.className = 'test-status error';
+  }
+});
+
+// ── Shared ────────────────────────────────────────────────────────────────────
+
 elBtnResetOffset.addEventListener('click', () => {
   chrome.runtime.sendMessage({ type: 'RESET_OFFSET' }, () => {
     showStatus("Will re-process today's file from the beginning on next poll.", false);
@@ -97,6 +167,9 @@ elBtnSave.addEventListener('click', async () => {
   const format = document.querySelector('input[name="format"]:checked')?.value || 'png';
 
   const settings = {
+    serverPort: parseInt(elServerPort.value, 10) || 8765,
+    logDirMac: elLogDirMac.value.trim(),
+    logDirWindows: elLogDirWindows.value.trim(),
     dpmm,
     width: parseFloat(elWidth.value) || 4,
     height: parseFloat(elHeight.value) || 6,

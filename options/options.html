@@ -13,16 +13,68 @@
       <p class="subtitle">Settings</p>
     </header>
 
-    <!-- Log Folder -->
+    <!-- Log Source -->
     <section class="card">
-      <h2>Log Folder</h2>
-      <p class="hint">Select the folder where PlexComponentHost writes its log files. The extension reads files directly from disk — no server or Python required.</p>
-      <div class="folder-row">
-        <button id="btn-select-folder" class="btn-secondary">Select Log Folder…</button>
-        <button id="btn-clear-folder" class="btn-link" style="margin-left:8px;">Clear</button>
+      <h2>Log Source</h2>
+
+      <!-- Method A: File System Access -->
+      <div class="method-block">
+        <div class="method-header">
+          <span class="method-title">Option A — Direct Folder Access</span>
+          <span class="method-badge">Windows recommended</span>
+        </div>
+        <p class="hint">Select the log folder directly. <strong>Not available for ~/Library on Mac</strong> due to a Chrome security restriction — use Option B instead.</p>
+        <div class="folder-row">
+          <button id="btn-select-folder" class="btn-secondary">Select Log Folder…</button>
+          <button id="btn-clear-folder" class="btn-link" style="margin-left:8px;">Clear</button>
+        </div>
+        <p id="selected-folder" class="selected-folder"></p>
       </div>
-      <p id="selected-folder" class="selected-folder"></p>
-      <button id="btn-reset-offset" class="btn-link" style="margin-top:10px;">Re-process today's file from start</button>
+
+      <div class="method-divider">— or —</div>
+
+      <!-- Method B: HTTP server -->
+      <div class="method-block">
+        <div class="method-header">
+          <span class="method-title">Option B — Local File Server</span>
+          <span class="method-badge method-badge-mac">Mac required</span>
+        </div>
+        <p class="hint">Run this command in Terminal once to start a lightweight read-only server. No data leaves your machine.</p>
+
+        <div class="server-tabs">
+          <button class="tab-btn active" data-tab="mac">Mac</button>
+          <button class="tab-btn" data-tab="windows">Windows</button>
+        </div>
+
+        <div id="tab-mac" class="tab-content">
+          <div class="form-row" style="margin-bottom:8px;">
+            <label style="flex:1;">Log directory
+              <input type="text" id="log-dir-mac" style="width:100%;font-family:monospace;font-size:12px;" />
+            </label>
+          </div>
+          <code id="cmd-mac" class="cmd-block"></code>
+          <button class="btn-copy" data-target="cmd-mac">Copy</button>
+        </div>
+        <div id="tab-windows" class="tab-content hidden">
+          <div class="form-row" style="margin-bottom:8px;">
+            <label style="flex:1;">Log directory
+              <input type="text" id="log-dir-windows" style="width:100%;font-family:monospace;font-size:12px;" />
+            </label>
+          </div>
+          <code id="cmd-windows" class="cmd-block"></code>
+          <button class="btn-copy" data-target="cmd-windows">Copy</button>
+        </div>
+
+        <div class="form-row" style="margin-top:12px;">
+          <label>Port
+            <input type="number" id="server-port" min="1024" max="65535" value="8765" style="width:100px;" />
+          </label>
+          <button id="btn-test-server" class="btn-secondary" style="margin-bottom:0;">Test Connection</button>
+          <span id="test-status" class="test-status"></span>
+        </div>
+      </div>
+
+      <button id="btn-reset-offset" class="btn-link" style="margin-top:12px;">Re-process today's file from start</button>
     </section>
 
     <!-- Label Size -->

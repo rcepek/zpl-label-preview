@@ -34,46 +34,51 @@ async function pollLogFile() {
   const lastDate = sessionData[POLL_DATE_KEY];
   const lastOffset = lastDate === today ? (sessionData[POLL_OFFSET_KEY] || 0) : 0;
 
-  // Get the stored directory handle from IndexedDB
-  const dirHandle = await getDirHandle();
-  if (!dirHandle) {
-    await chrome.storage.session.set({
-      pollError: 'No log folder selected. Open Settings and click "Select Log Folder".',
-    });
-    return;
-  }
-
-  // Check read permission — service workers cannot prompt, only query
-  let permission;
-  try {
-    permission = await dirHandle.queryPermission({ mode: 'read' });
-  } catch {
-    permission = 'prompt';
-  }
-  if (permission !== 'granted') {
-    await chrome.storage.session.set({
-      pollError: 'Log folder permission needed. Open Settings and click "Select Log Folder" again.',
-    });
-    return;
-  }
-
+  // ── Method A: File System Access API (Windows / non-system paths) ────────────
   let text;
-  try {
-    const fileHandle = await dirHandle.getFileHandle(filename);
-    const file = await fileHandle.getFile();
-    text = await file.text();
-  } catch (err) {
-    if (err.name === 'NotFoundError') {
-      await chrome.storage.session.set({
-        pollError: `Log file not found: ${filename}`,
-        watchFilename: filename,
-      });
-    } else {
-      await chrome.storage.session.set({
-        pollError: `Cannot read log file: ${err.message}`,
-      });
+  const dirHandle = await getDirHandle();
+  if (dirHandle) {
+    const permission = await dirHandle.queryPermission({ mode: 'read' }).catch(() => 'prompt');
+    if (permission === 'granted') {
+      try {
+        const fileHandle = await dirHandle.getFileHandle(filename);
+        const file = await fileHandle.getFile();
+        text = await file.text();
+      } catch (err) {
+        if (err.name === 'NotFoundError') {
+          // File not found via filesystem — fall through to server method
+        }
+        // Any other error: fall through to server method
+      }
     }
-    return;
+  }
+
+  // ── Method B: HTTP server fallback (required for Mac ~/Library paths) ────────
+  if (text === undefined) {
+    const port = settings.serverPort;
+    if (!port) {
+      await chrome.storage.session.set({
+        pollError: 'No log source configured. Open Settings to select a folder or start the file server.',
+      });
+      return;
+    }
+    const url = `http://localhost:${port}/${filename}`;
+    try {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) {
+        await chrome.storage.session.set({
+          pollError: `Log file not found (${filename}). Is the server running on port ${port}?`,
+          watchFilename: filename,
+        });
+        return;
+      }
+      text = await response.text();
+    } catch {
+      await chrome.storage.session.set({
+        pollError: `Cannot reach localhost:${port}. Run the server command shown in Settings.`,
+      });
+      return;
+    }
   }
 
   const { newContent, newOffset } = getNewContent(text, lastOffset);
