@@ -17,29 +17,13 @@
     <section class="card">
       <h2>Log Source</h2>
 
-      <!-- Method A: File System Access -->
+      <!-- Method B: HTTP server (primary) -->
       <div class="method-block">
         <div class="method-header">
-          <span class="method-title">Option A — Direct Folder Access</span>
-          <span class="method-badge">Windows recommended</span>
+          <span class="method-title">Option A — Local File Server</span>
+          <span class="method-badge method-badge-recommended">Recommended</span>
         </div>
-        <p class="hint">Select the log folder directly. <strong>Not available for ~/Library on Mac</strong> due to a Chrome security restriction — use Option B instead.</p>
-        <div class="folder-row">
-          <button id="btn-select-folder" class="btn-secondary">Select Log Folder…</button>
-          <button id="btn-clear-folder" class="btn-link" style="margin-left:8px;">Clear</button>
-        </div>
-        <p id="selected-folder" class="selected-folder"></p>
-      </div>
-
-      <div class="method-divider">— or —</div>
-
-      <!-- Method B: HTTP server -->
-      <div class="method-block">
-        <div class="method-header">
-          <span class="method-title">Option B — Local File Server</span>
-          <span class="method-badge method-badge-mac">Mac required</span>
-        </div>
-        <p class="hint">Run this command in Terminal once to start a lightweight read-only server. No data leaves your machine.</p>
+        <p class="hint">Run this command in Terminal (Mac) or Command Prompt (Windows) once to start a lightweight read-only server. No data leaves your machine.</p>
 
         <div class="server-tabs">
           <button class="tab-btn active" data-tab="mac">Mac</button>
@@ -72,6 +56,22 @@
           <button id="btn-test-server" class="btn-secondary" style="margin-bottom:0;">Test Connection</button>
           <span id="test-status" class="test-status"></span>
         </div>
+      </div>
+
+      <div class="method-divider">— or —</div>
+
+      <!-- Method A: File System Access (secondary) -->
+      <div class="method-block">
+        <div class="method-header">
+          <span class="method-title">Option B — Direct Folder Access</span>
+          <span class="method-badge method-badge-limited">Custom paths only</span>
+        </div>
+        <p class="hint">Select a log folder directly — no server needed. <strong>Blocked by Chrome for system directories</strong> (~/Library on Mac, AppData on Windows). Only works if your logs are in a non-system location.</p>
+        <div class="folder-row">
+          <button id="btn-select-folder" class="btn-secondary">Select Log Folder…</button>
+          <button id="btn-clear-folder" class="btn-link" style="margin-left:8px;">Clear</button>
+        </div>
+        <p id="selected-folder" class="selected-folder"></p>
       </div>
 
       <button id="btn-reset-offset" class="btn-link" style="margin-top:12px;">Re-process today's file from start</button>
