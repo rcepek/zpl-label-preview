@@ -4,6 +4,8 @@ const elServerPort = document.getElementById('server-port');
 const elBtnTestServer = document.getElementById('btn-test-server');
 const elTestStatus = document.getElementById('test-status');
 const elBtnResetOffset = document.getElementById('btn-reset-offset');
+const elLogDirMac = document.getElementById('log-dir-mac');
+const elLogDirWindows = document.getElementById('log-dir-windows');
 const elWidth = document.getElementById('label-width');
 const elHeight = document.getElementById('label-height');
 const elPollInterval = document.getElementById('poll-interval');
@@ -22,6 +24,8 @@ async function init() {
   const settings = await getSettings();
 
   elServerPort.value = settings.serverPort;
+  elLogDirMac.value = settings.logDirMac || '~/Library/Logs/PlexComponentHost';
+  elLogDirWindows.value = settings.logDirWindows || '%LOCALAPPDATA%\\Plex\\ComponentHost\\logs';
   elWidth.value = settings.width;
   elHeight.value = settings.height;
   document.querySelector(`input[name="dpmm"][value="${settings.dpmm}"]`).checked = true;
@@ -41,13 +45,23 @@ async function init() {
 }
 
 function updateCmdBlocks(port) {
+  const mac = elLogDirMac.value.trim() || '~/Library/Logs/PlexComponentHost';
+  const win = elLogDirWindows.value.trim() || '%LOCALAPPDATA%\\Plex\\ComponentHost\\logs';
   document.getElementById('cmd-mac').textContent =
-    `python3 -m http.server ${port} --directory ~/Library/Logs/PlexComponentHost`;
+    `python3 -m http.server ${port} --directory ${mac}`;
   document.getElementById('cmd-windows').textContent =
-    `python -m http.server ${port} --directory "%LOCALAPPDATA%\\PlexComponentHost\\logs"`;
+    `python -m http.server ${port} --directory "${win}"`;
 }
 
 elServerPort.addEventListener('input', () => {
+  updateCmdBlocks(elServerPort.value || 8765);
+});
+
+elLogDirMac.addEventListener('input', () => {
+  updateCmdBlocks(elServerPort.value || 8765);
+});
+
+elLogDirWindows.addEventListener('input', () => {
   updateCmdBlocks(elServerPort.value || 8765);
 });
 
@@ -110,6 +124,8 @@ elBtnSave.addEventListener('click', async () => {
     height: parseFloat(elHeight.value) || 6,
     format,
     pollIntervalSeconds: parseInt(elPollInterval.value, 10) || 2,
+    logDirMac: elLogDirMac.value.trim(),
+    logDirWindows: elLogDirWindows.value.trim(),
     downloadSubfolder: elDownloadSubfolder.value.trim(),
     autoDownload: elAutoDownload.checked,
     debugMode: elDebugMode.checked,

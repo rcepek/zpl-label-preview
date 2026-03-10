@@ -24,13 +24,25 @@
       </div>
 
       <div id="tab-mac" class="tab-content">
+        <div class="form-row" style="margin-bottom:8px;">
+          <label style="flex:1;">
+            Log directory
+            <input type="text" id="log-dir-mac" value="~/Library/Logs/PlexComponentHost" style="width:100%;font-family:monospace;font-size:12px;" />
+          </label>
+        </div>
         <code id="cmd-mac" class="cmd-block">python3 -m http.server 8765 --directory ~/Library/Logs/PlexComponentHost</code>
         <button class="btn-copy" data-target="cmd-mac">Copy</button>
       </div>
       <div id="tab-windows" class="tab-content hidden">
-        <code id="cmd-windows" class="cmd-block">python -m http.server 8765 --directory "%LOCALAPPDATA%\PlexComponentHost\logs"</code>
+        <div class="form-row" style="margin-bottom:8px;">
+          <label style="flex:1;">
+            Log directory
+            <input type="text" id="log-dir-windows" value="%LOCALAPPDATA%\Plex\ComponentHost\logs" style="width:100%;font-family:monospace;font-size:12px;" />
+          </label>
+        </div>
+        <code id="cmd-windows" class="cmd-block">python -m http.server 8765 --directory "%LOCALAPPDATA%\Plex\ComponentHost\logs"</code>
         <button class="btn-copy" data-target="cmd-windows">Copy</button>
-        <p class="hint" style="margin-top:8px;">Adjust the path to match where PlexComponentHost stores logs on your machine.</p>
+        <p class="hint" style="margin-top:8px;">Edit the log directory above if your path differs, then copy the updated command.</p>
       </div>
 
       <div class="form-row" style="margin-top:16px;">
