@@ -52,7 +52,25 @@ h2 {
   line-height: 1.5;
 }
 
-/* ── Server section ── */
+/* ── Folder section ── */
+.folder-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.selected-folder {
+  font-size: 12px;
+  color: #6e6e73;
+  margin-top: 6px;
+  word-break: break-all;
+}
+
+.selected-folder.ok { color: #16a34a; }
+.selected-folder.error { color: #dc2626; }
+
+/* ── Server section (kept for reference) ── */
 .server-tabs {
   display: flex;
   gap: 4px;

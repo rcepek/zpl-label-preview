@@ -1,11 +1,11 @@
 /**
  * Background service worker.
- * Fetches today's log file from a local Python HTTP server
- * (http://localhost:{port}/notifier-YYYYMMDD.log), extracts ZPL,
+ * Reads today's log file directly via the File System Access API
+ * (FileSystemDirectoryHandle stored in IndexedDB), extracts ZPL,
  * and renders labels via labelary.com.
  */
 
-import { getSettings, todayLogFilename } from '../lib/storage.js';
+import { getSettings, getDirHandle, todayLogFilename } from '../lib/storage.js';
 import { extractZplBlocks, getNewContent } from '../lib/zpl-parser.js';
 import { renderLabel, blobToDataUrl } from '../lib/labelary.js';
 
@@ -27,7 +27,6 @@ async function registerAlarm() {
 async function pollLogFile() {
   const settings = await getSettings();
   const filename = todayLogFilename();
-  const url = `http://localhost:${settings.serverPort}/${filename}`;
 
   // Detect day rollover — reset offset when date changes
   const today = new Date().toDateString();
@@ -35,20 +34,45 @@ async function pollLogFile() {
   const lastDate = sessionData[POLL_DATE_KEY];
   const lastOffset = lastDate === today ? (sessionData[POLL_OFFSET_KEY] || 0) : 0;
 
+  // Get the stored directory handle from IndexedDB
+  const dirHandle = await getDirHandle();
+  if (!dirHandle) {
+    await chrome.storage.session.set({
+      pollError: 'No log folder selected. Open Settings and click "Select Log Folder".',
+    });
+    return;
+  }
+
+  // Check read permission — service workers cannot prompt, only query
+  let permission;
+  try {
+    permission = await dirHandle.queryPermission({ mode: 'read' });
+  } catch {
+    permission = 'prompt';
+  }
+  if (permission !== 'granted') {
+    await chrome.storage.session.set({
+      pollError: 'Log folder permission needed. Open Settings and click "Select Log Folder" again.',
+    });
+    return;
+  }
+
   let text;
   try {
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) {
+    const fileHandle = await dirHandle.getFileHandle(filename);
+    const file = await fileHandle.getFile();
+    text = await file.text();
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
       await chrome.storage.session.set({
-        pollError: `Log file not found (${filename}). Is the server running on port ${settings.serverPort}?`,
+        pollError: `Log file not found: ${filename}`,
+        watchFilename: filename,
       });
-      return;
+    } else {
+      await chrome.storage.session.set({
+        pollError: `Cannot read log file: ${err.message}`,
+      });
     }
-    text = await response.text();
-  } catch {
-    await chrome.storage.session.set({
-      pollError: `Cannot reach localhost:${settings.serverPort}. Run the server command shown in Settings.`,
-    });
     return;
   }
 
